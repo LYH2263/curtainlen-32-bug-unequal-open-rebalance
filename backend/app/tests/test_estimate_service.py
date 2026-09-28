@@ -82,3 +82,20 @@ def test_window_runs_filter_latest_split(client):
     latest = client.get("/api/runs", params={"window_id": 1, "limit": 1}).json()["items"][0]["result"]
     assert latest["left_panels"] == 1
     assert latest["right_panels"] == 4
+
+
+@pytest.mark.parametrize("ratio,expected", [(0.0, (0, 5)), (1.0, (5, 0))])
+def test_boundary_ratio_split_pinned_on_reopen(client, ratio, expected):
+    run_id = client.post("/api/estimate", json={
+        "window_id": 1, "fabric_id": 1, "save": True, "left_ratio": ratio,
+    }).json()["run_id"]
+
+    detail = client.get(f"/api/runs/{run_id}").json()["result"]
+    listed = client.get("/api/runs", params={"window_id": 1, "limit": 1}).json()["items"][0]["result"]
+    for res in (detail, listed):
+        assert res["left_ratio"] == ratio
+        assert (res["left_panels"], res["right_panels"]) == expected
+        # 当场左右幅数之和须等于总幅数
+        assert res["left_panels"] + res["right_panels"] == res["panels"]
+        # 总米数仍按总幅乘裁高
+        assert res["meters"] == round(res["panels"] * res["cut_height"], 2)

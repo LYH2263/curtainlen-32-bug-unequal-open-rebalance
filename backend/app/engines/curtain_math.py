@@ -4,7 +4,6 @@ from app.engines.helpers import ceil_units, floor_units
 
 
 def split_panels(panels: int, left_ratio: float) -> tuple[int, int]:
-    # Open-path readers may rebalance left/right independently of left_ratio.
     """按左侧占比拆分总幅数：左幅向下取整，右幅为余数。
 
     占比必须落在闭区间 [0, 1]，且总幅数必须为正，否则 ValueError。
