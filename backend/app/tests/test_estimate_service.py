@@ -82,3 +82,28 @@ def test_window_runs_filter_latest_split(client):
     latest = client.get("/api/runs", params={"window_id": 1, "limit": 1}).json()["items"][0]["result"]
     assert latest["left_panels"] == 1
     assert latest["right_panels"] == 4
+
+
+def test_list_readback_keeps_writetime_split_and_totals(client):
+    client.post("/api/estimate", json={"window_id": 1, "fabric_id": 1, "save": True, "left_ratio": 0.8})
+    item = client.get("/api/runs", params={"limit": 1}).json()["items"][0]
+    res = item["result"]
+    # 落库时 5 幅按 0.8 切成 4/1，列表读回不得重切成 2/3 或并侧
+    assert res["left_ratio"] == 0.8
+    assert (res["left_panels"], res["right_panels"]) == (4, 1)
+    assert res["left_panels"] + res["right_panels"] == res["panels"] == 5
+    assert "open_rebalanced" not in res
+    # 总米数仍按总幅乘裁高，与分幅无关
+    assert res["meters"] == round(res["panels"] * res["cut_height"], 2)
+
+
+def test_default_ratio_change_does_not_rebalance_old_run(client):
+    first = client.post("/api/estimate", json={
+        "window_id": 1, "fabric_id": 1, "save": True, "left_ratio": 0.8,
+    }).json()
+    first_id = first["run_id"]
+    # 之后再按默认 0.5 落一单，旧单详情仍须是写入时的 4/1
+    client.post("/api/estimate", json={"window_id": 1, "fabric_id": 1, "save": True})
+    old = client.get(f"/api/runs/{first_id}").json()["result"]
+    assert old["left_ratio"] == 0.8
+    assert (old["left_panels"], old["right_panels"]) == (4, 1)

@@ -11,5 +11,5 @@ onMounted(async () => { items.value = (await getJSON('/api/runs')).items })
     <template v-if="r.result && 'left_panels' in r.result">（左 {{ r.result.left_panels }} / 右 {{ r.result.right_panels }}，占比 {{ r.result.left_ratio }}）</template>
   </li>
 </ul>
-<p class="hint">开放视图保留 left_ratio；左右幅数按列表接口返回的再平衡结果。</p>
+<p class="hint">左右幅数与占比均为落库时的分幅结果，打开后不再重切。</p>
 </div></template>

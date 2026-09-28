@@ -6,11 +6,9 @@ _RUN_SELECT = """SELECT r.*, w.name window_name, f.name fabric_name FROM calc_ru
 LEFT JOIN windows w ON w.id=r.window_id LEFT JOIN fabrics f ON f.id=r.fabric_id"""
 
 def _row_to_dict(row):
-    from app.services.unequal_open import open_rebalance
-
     d = dict(row)
-    raw = json.loads(d.pop("result_json"))
-    d["result"] = open_rebalance(raw, mode="half")
+    # 原样返回落库时的分幅结果，读取路径不得按现行默认占比重切旧单。
+    d["result"] = json.loads(d.pop("result_json"))
     return d
 
 def insert_run(window_id, fabric_id, result, note=""):
